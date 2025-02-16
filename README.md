@@ -4,9 +4,9 @@
 
 Packaged with uv, for cu124 on linux/windows.
 
-
 ```bash
-uv run wear_face_mask.py
+uv pip install -e .
+uv run python -m wear_face_mask
 ```
 
 ## 介绍

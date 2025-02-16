@@ -1,32 +1,51 @@
+from typing import Literal
+from importlib import resources
+
 import face_alignment
-from PIL import Image
+from PIL import Image, ImageFile
 import numpy as np
+import torch
+
+import wear_face_mask
+
+DEFAULT_MASK_PATH = resources.files(wear_face_mask) / "res" / "mask.png"
 
 
 class WearFaceMask(object):
     def __init__(
         self,
-        face_path,
-        mask_path,
-        save_path,
+        mask_path=DEFAULT_MASK_PATH,
         enlarge_ratio=0.9,
-        use_gpu=True,
+        torch_device: Literal["cuda", "cpu", "mkl"] = "cpu",
+        torch_dtype=None,
         show=False,
     ):
-        self.face_path = face_path
+        """
+        `torch_device`:
+
+        use `mkl` for macos, `cuda` for windows/linux with a NVIDIA GPU.
+
+        `torch_dtype`:
+
+        specify to `torch.float32` if your GPU don't have FP32 support.
+
+        defaults to FP16 for GPU targets, FP32 for CPU target.
+        """
+        if torch_dtype is None:
+            if torch_device == "cpu":
+                torch_dtype = torch.float32
+            else:
+                torch_dtype = torch.float16
+
         self.mask_path = mask_path
-        self.save_path = save_path
         self.enlarge_ratio = enlarge_ratio
-        self.use_gpu = use_gpu
         self.show = show
-        if use_gpu:
-            self.fa = face_alignment.FaceAlignment(
-                face_alignment.LandmarksType.TWO_D, device="cuda"
-            )
-        else:
-            self.fa = face_alignment.FaceAlignment(
-                face_alignment.LandmarksType.TWO_D, device="cpu"
-            )
+
+        self.fa = face_alignment.FaceAlignment(
+            face_alignment.LandmarksType.TWO_D,
+            device=torch_device,
+            dtype=torch_dtype,
+        )
 
     def get_key_landmarks(self, face_landmarks):
         """从68个关键点中获取4个关键点的位置
@@ -57,8 +76,11 @@ class WearFaceMask(object):
         dist = abs(np.cross(vec1, vec2)) / np.linalg.norm(line_point2 - line_point1)
         return dist
 
-    def wear_face_mask(self):
-        self._face_img = Image.open(self.face_path)
+    def wear_face_mask(
+        self,
+        face_path: str,
+    ) -> ImageFile.ImageFile:
+        self._face_img = Image.open(face_path)
         self._mask_img = Image.open(self.mask_path)
         face_landmarks = self.fa.get_landmarks(np.asarray(self._face_img))[0].astype(
             np.int32
@@ -119,14 +141,5 @@ class WearFaceMask(object):
         )
 
         self._face_img.paste(mask_img, (box_x, box_y), mask_img)
-        self.save()
 
-    def save(self):
-        self._face_img.save(self.save_path)
-        print(f"Save to {self.save_path}")
-
-
-face_path = "imgs/test.jpg"
-mask_path = "mask_images/mask.png"
-save_path = "imgs/face_mask.jpg"
-WearFaceMask(face_path, mask_path, save_path).wear_face_mask()
+        return self._face_img
