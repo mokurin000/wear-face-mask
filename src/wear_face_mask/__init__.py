@@ -16,14 +16,16 @@ class WearFaceMask(object):
         self,
         mask_path=DEFAULT_MASK_PATH,
         enlarge_ratio=0.9,
-        torch_device: Literal["cuda", "cpu", "mkl"] = "cpu",
+        torch_device: Literal["cuda", "cpu", "mps", "xpu", "xla"] = "cpu",
         torch_dtype=None,
         show=False,
     ):
         """
         `torch_device`:
 
-        use `mkl` for macos, `cuda` for windows/linux with a NVIDIA GPU.
+        Use `mps` for macos, `cuda` for windows/linux with a NVIDIA GPU.
+
+        If you want to use ROCm, start with linux and you will get a painful travel.
 
         `torch_dtype`:
 
