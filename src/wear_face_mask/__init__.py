@@ -19,6 +19,7 @@ class WearFaceMask(object):
         torch_device: Literal["cuda", "cpu", "mps", "xpu", "xla"] = "cpu",
         torch_dtype=None,
         show=False,
+        face_detector: Literal["dlib", "sfd"] = "sfd",
     ):
         """
         `torch_device`:
@@ -47,6 +48,7 @@ class WearFaceMask(object):
             face_alignment.LandmarksType.TWO_D,
             device=torch_device,
             dtype=torch_dtype,
+            face_detector=face_detector,
         )
 
     def get_key_landmarks(self, face_landmarks):
